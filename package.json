@@ -6,7 +6,7 @@
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "peerDependencies": {
-    "rgraphql": "^0.3.0",
+    "rgraphql": "^0.4.0",
     "rxjs": "^5.0.0"
   },
   "dependencies": {
