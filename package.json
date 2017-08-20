@@ -37,7 +37,7 @@
     "cz-conventional-changelog": "^2.0.0",
     "istanbul": "^1.1.0-alpha.1",
     "jasmine": "^2.6.0",
-    "jasmine-console-reporter": "^1.2.0",
+    "jasmine-console-reporter": "^2.0.1",
     "semantic-release": "^6.3.2",
     "ts-node": "^3.0.4",
     "tslint": "^5.4.2",
