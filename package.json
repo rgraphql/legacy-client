@@ -32,7 +32,7 @@
     "@types/graphql": "^0.9.1",
     "@types/jasmine": "^2.5.51",
     "@types/lodash": "^4.14.50",
-    "@types/long": "^3.0.31",
+    "@types/long": "^4.0.0",
     "@types/node": "^7.0.8",
     "cz-conventional-changelog": "^2.0.0",
     "istanbul": "^1.1.0-alpha.1",
