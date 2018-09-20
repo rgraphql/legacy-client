@@ -16,6 +16,8 @@ export interface IVariableReference {
   id: number
   // Name
   name: string
+  // Variable
+  varb: Variable
   // Make another reference to this variable.
   clone(): IVariableReference
   // We no longer are referencing this variable.
@@ -49,6 +51,7 @@ export class Variable {
     return {
       id: this.id,
       name: this.name,
+      varb: this,
       clone: () => {
         if (unsubbed) {
           return

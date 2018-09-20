@@ -1,7 +1,27 @@
-import { QueryTreeNode } from '../src/query-tree'
-import { parse, print } from 'graphql'
-import { IRGQLQueryTreeNode } from 'rgraphql'
-import { IChangeBus, ITreeMutation } from '../src/query-tree/change-bus'
+import { QueryTree } from '../src/query-tree/query-tree'
+import { QueryTreeNode } from '../src/query-tree/query-tree-node'
+import { QueryTreeHandler } from '../src/query-tree/query-tree-handler'
+import { parse, print, buildSchema, OperationDefinitionNode } from 'graphql'
+import { IRGQLQueryTreeNode, IRGQLQueryTreeMutation } from 'rgraphql'
+
+function mockSchema() {
+  return buildSchema(`
+  type RootQuery {
+    allPeople(age: Int): [Person]
+    person(distance: Int): Person
+  }
+
+  type Person {
+    name: String
+    age: Int
+    description: String
+  }
+
+  schema {
+    query: RootQuery
+  }
+  `)
+}
 
 function mockAst() {
   return parse(
@@ -27,55 +47,36 @@ query mySecondQuery($distance: Int) {
 
 describe('QueryTreeNode', () => {
   it('should build a tree properly', () => {
-    let ast = mockAst()
-    let changeBus: IChangeBus = {
-      applyTreeMutation: (mutation: ITreeMutation) => {
-        console.log('Applying:')
-        console.log(mutation)
-      }
+    let queryAst = mockAst()
+    let handler: QueryTreeHandler = (mutation: IRGQLQueryTreeMutation) => {
+      console.log('Applying:')
+      console.log(mutation)
     }
-    let tree = new QueryTreeNode()
-    tree.addChangeBus(changeBus)
+    let schema = mockSchema()
+    let tree = new QueryTree(schema, handler)
 
-    let querya = tree.buildQuery(<any>ast.definitions[0], {})
-    let queryb = tree.buildQuery(<any>ast.definitions[1], { distance: 10 })
-    expect(tree.children.length).toBe(3)
-    let astb = tree.buildAst()
-    let astStr = print(astb)
+    let querya = tree.buildQuery(queryAst.definitions[0] as OperationDefinitionNode, {})
+    let queryb = tree.buildQuery(queryAst.definitions[1] as OperationDefinitionNode, {
+      distance: 10
+    })
+    // expect(tree.children.length).toBe(3)
 
-    console.log(astStr)
-
-    querya.unsubscribe()
-    // queryb.unsubscribe();
-
-    tree.garbageCollect()
+    tree.detach(querya)
     // expect(tree.children.length).toBe(0);
-
     console.log(queryb)
-
-    astb = tree.buildAst()
-    astStr = print(astb)
-    console.log('After unsubscribe:')
-    console.log(astStr)
-  })
-  it('should build a result properly', () => {
-    let ast = mockAst()
-    let tree = new QueryTreeNode()
-    let query = tree.buildQuery(<any>ast.definitions[0], {})
-
-    // let res = JSON.stringify(query.buildResult());
-    // console.log(res);
   })
   it('should build a proto tree properly', () => {
     let ast = mockAst()
-    let tree = new QueryTreeNode()
+    let schema = mockSchema()
+    let tree = new QueryTree(schema, null)
     let query = tree.buildQuery(<any>ast.definitions[0], {})
 
-    let res = tree.buildRGQLTree(true)
+    let res = tree.buildProto()
     expect(res).toEqual(<IRGQLQueryTreeNode>{
       id: 0,
       fieldName: '',
       directive: [],
+      args: [],
       children: [
         {
           id: 1,
@@ -120,35 +121,28 @@ describe('QueryTreeNode', () => {
       ]
     })
   })
-  it('should build a plain full path properly', () => {
-    let ast = mockAst()
-    let tree = new QueryTreeNode()
-    let query = tree.buildQuery(<any>ast.definitions[0], {})
-
-    let res = tree.children[0].children[0].fullPathPlain
-    expect(res).toEqual(['allPeople', 'name'])
-  })
 
   it('should detect differing arguments', () => {
     let ast = parse(
       `
 query myQuery {
-field(arg1: "Test") {
-  subfield
-}
+  person(distance: 5) {
+    name
+  }
 }
 query mySecondQuery {
-field(arg1: "Test Two") {
-  subfield
-}
+  person(distance: 50) {
+    name
+  }
 }
 `
     )
-    let node = new QueryTreeNode()
+    let schema = mockSchema()
+    let node = new QueryTree(schema, null)
     let sel1 = <any>ast.definitions[0]
     let sel2 = <any>ast.definitions[1]
     let q1 = node.buildQuery(sel1, {})
     let q2 = node.buildQuery(sel2, {})
-    expect(node.children.length).toBe(2)
+    // expect(node.children.length).toBe(2)
   })
 })

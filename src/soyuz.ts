@@ -2,9 +2,5 @@
 // import "core-js/fn/array.find"
 // ...
 
-import { QueryTreeNode } from './query-tree'
-
 // Client implements a soyuz client.
-export default class Client {
-  private queryTree: QueryTreeNode = new QueryTreeNode()
-}
+export default class Client {}
