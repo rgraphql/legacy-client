@@ -111,6 +111,7 @@
   },
   "dependencies": {
     "graphql": "^14.0.2",
+    "lru_map": "^0.3.3",
     "rgraphql": "^0.6.0",
     "rxjs": "^6.3.2",
     "rxjs-compat": "^6.3.2"

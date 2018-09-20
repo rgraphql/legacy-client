@@ -2,13 +2,7 @@ import { OperationDefinitionNode, visit, GraphQLSchema, FieldNode, BREAK } from 
 import { QueryTreeHandler } from './query-tree-handler'
 import { QueryTreeNode } from './query-tree-node'
 import { VariableStore } from '../var-store'
-import {
-  IASTVariable,
-  IRGQLQueryTreeMutation,
-  INodeMutation,
-  SubtreeOperation,
-  IRGQLQueryTreeNode
-} from 'rgraphql'
+import { IASTVariable, INodeMutation, SubtreeOperation, IRGQLQueryTreeNode } from 'rgraphql'
 import { Query } from './query'
 import { AttachedQuery } from './query-attached'
 import { getLookupType } from '../util'
@@ -48,9 +42,9 @@ export class QueryTree {
     return this.schema as GraphQLSchema
   }
 
-  // getSchema returns the soyuz schema.
-  public getSchema(): Schema {
-    return this.schema
+  // getRoot returns the root node.
+  public getRoot(): QueryTreeNode {
+    return this.root
   }
 
   // buildQuery creates a new query attached to the query tree.
