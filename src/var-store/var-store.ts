@@ -19,7 +19,8 @@ export interface IVariableReference {
   // Variable
   varb: Variable
   // Make another reference to this variable.
-  clone(): IVariableReference
+  // Returns undefined if the variable has been deleted.
+  clone(): IVariableReference | undefined
   // We no longer are referencing this variable.
   unsubscribe(): void
 }
@@ -99,7 +100,7 @@ export class VariableStore {
     return nvar.addReference()
   }
 
-  public getVariableByName(name: string): IVariableReference {
+  public getVariableByName(name: string): IVariableReference | null {
     let variable = this.variables[name]
     if (!variable) {
       return null

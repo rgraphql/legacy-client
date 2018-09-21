@@ -26,7 +26,7 @@ export class QueryTree {
     // schema is the graphql schema
     private schema: GraphQLSchema,
     // handler handles changes to the tree.
-    private handler: QueryTreeHandler
+    private handler?: QueryTreeHandler
   ) {
     let queryType = schema.getQueryType()
     if (!queryType) {

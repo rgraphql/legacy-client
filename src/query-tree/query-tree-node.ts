@@ -86,6 +86,11 @@ export class QueryTreeNode {
     return this.id
   }
 
+  // getName returns the field name.
+  public getName(): string {
+    return this.name || ''
+  }
+
   // getParent returns the parent.
   public getParent(): QueryTreeNode | null {
     return this.parent

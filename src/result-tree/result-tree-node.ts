@@ -16,6 +16,9 @@ export class ResultTreeNode {
     handler: ResultTreeHandler,
     cb: (rtn: ResultTreeNode, rth: ResultTreeHandler) => void
   ) {
+    if (!handler) {
+      return
+    }
     for (let child of this.children) {
       let nextHandler = handler(child.value)
       if (nextHandler) {

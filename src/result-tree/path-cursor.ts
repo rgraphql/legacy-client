@@ -61,6 +61,9 @@ export class PathCursor {
 
     let nextHandlers: ResultTreeHandler[] = []
     for (let handler of this.resultHandlers) {
+      if (!handler) {
+        continue
+      }
       let nextHandler = handler(val)
       if (nextHandler) {
         nextHandlers.push(nextHandler)
