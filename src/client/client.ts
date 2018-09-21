@@ -66,6 +66,8 @@ export class SoyuzClient {
         }
       }
     }
+
+    this.resultTree.flushHandlers()
   }
 
   // handleTreeMutation handles a query tree mutation.

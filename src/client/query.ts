@@ -52,7 +52,7 @@ export class RunningQuery {
     let rhandler = handler.getResultHandler()
     this.handlers.push(handler)
     this.rootRtHandlers.push(rhandler)
-    this.resultTree.addResultHandler(rhandler)
+    this.resultTree.addResultHandler(rhandler, handler.flush.bind(handler))
   }
 
   // detachHandler detaches a handler from the query.

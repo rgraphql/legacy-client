@@ -10,6 +10,7 @@ import { rgraphql } from 'rgraphql'
 interface IAttachedHandler {
   handler: ResultTreeHandler
   cursors: PathCursor[]
+  flush?: () => void
 }
 
 // IAttachedCursor is an attached result cursor.
@@ -88,8 +89,8 @@ export class ResultTree {
   }
 
   // addResultHandler adds a result handler and calls it for all existing data that matches.
-  public addResultHandler(handler: ResultTreeHandler) {
-    this.handlers.push({ handler, cursors: [] })
+  public addResultHandler(handler: ResultTreeHandler, flush?: () => void) {
+    this.handlers.push({ handler, cursors: [], flush })
     this.rootCursor.resultHandlers.push(handler)
     this.root.callHandler(handler, (rtn: ResultTreeNode, rth: ResultTreeHandler) => {
       let attachedCursors: PathCursor[] | undefined
@@ -114,6 +115,15 @@ export class ResultTree {
         }
       }
     })
+  }
+
+  // flushHandlers calls flush on each handler
+  public flushHandlers() {
+    for (let handler of this.handlers) {
+      if (handler.flush) {
+        handler.flush()
+      }
+    }
   }
 
   // removeResultHandler removes a result handler from the result tree.
