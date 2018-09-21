@@ -1,7 +1,7 @@
 import { IVariableReference, VariableStore } from '../var-store'
 import { ArgumentNode } from 'graphql'
 import { astValueToJs } from '../util'
-import { IFieldArgument } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 
 // ArgsMap is the flattened arguments map.
 export type ArgsMap = { [argName: string]: IVariableReference }
@@ -27,11 +27,11 @@ export function NewArgsMapFromAST(varStore: VariableStore, args: ArgumentNode[])
 }
 
 // ArgsToProto builds protobuf argument set from an args map.
-export function ArgsToProto(am: ArgsMap | null): IFieldArgument[] {
+export function ArgsToProto(am: ArgsMap | null): rgraphql.IFieldArgument[] {
   if (!am) {
     return []
   }
-  let pargs: IFieldArgument[] = []
+  let pargs: rgraphql.IFieldArgument[] = []
   for (let argID in am) {
     if (!am.hasOwnProperty(argID)) {
       continue

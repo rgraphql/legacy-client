@@ -4,7 +4,7 @@ import { QueryTree } from '../query-tree/query-tree'
 import { ResultTreeNode } from './result-tree-node'
 import { ResultTreeHandler } from './result-tree-handler'
 import { Query } from '../query-tree/query'
-import { CacheStrategy, IRGQLValue } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 
 // IAttachedHandler is an attached query tree handler.
 interface IAttachedHandler {
@@ -30,8 +30,12 @@ export class ResultTree {
   private handlers: IAttachedHandler[] = []
   private cachedCursors: IAttachedCursor[] = []
 
-  constructor(private qtree: QueryTree, cacheStrategy: CacheStrategy, cacheSize: number) {
-    if (cacheStrategy !== CacheStrategy.CACHE_LRU) {
+  constructor(
+    private qtree: QueryTree,
+    cacheStrategy: rgraphql.RGQLValueInit.CacheStrategy,
+    cacheSize: number
+  ) {
+    if (cacheStrategy !== rgraphql.RGQLValueInit.CacheStrategy.CACHE_LRU) {
       throw new Error('unsupported cache strategy: ' + cacheStrategy)
     }
 
@@ -40,10 +44,21 @@ export class ResultTree {
     this.pathCache = new PathCache(cacheSize, this.handleCursorEvict.bind(this))
   }
 
+  // reset resets the result tree and state.
+  public reset() {
+    this.cachedCursors.length = 0
+    this.handlers.length = 0
+    this.root.children.length = 0
+    this.rootCursor.resultHandlers.length = 0
+    this.rootCursor.outOfBounds = false
+    this.pathCache.reset()
+    this.cursor = null
+  }
+
   // handleValue handles an incoming value.
   // This must be called in-order.
   // If an error is thrown, behavior is then undefined.
-  public handleValue(val: IRGQLValue) {
+  public handleValue(val: rgraphql.IRGQLValue) {
     let isFirst = !this.cursor
     if (isFirst) {
       let posID = val.posIdentifier

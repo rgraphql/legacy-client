@@ -1,5 +1,4 @@
 import { OperationDefinitionNode } from 'graphql'
-import { CoercedVariableValues } from 'graphql/execution/values'
 
 // Query is a query operation attached to a query tree.
 export class Query {

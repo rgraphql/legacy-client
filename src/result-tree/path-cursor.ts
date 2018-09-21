@@ -1,7 +1,7 @@
 import { QueryTreeNode } from '../query-tree/query-tree-node'
 import { ResultTreeNode } from './result-tree-node'
 import { ResultTreeHandler } from './result-tree-handler'
-import { IRGQLValue } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 
 // PathCursor selects a location in the result tree.
 export class PathCursor {
@@ -11,7 +11,7 @@ export class PathCursor {
   constructor(public qnode: QueryTreeNode, public rnode: ResultTreeNode) {}
 
   // apply applies a value to the cursor.
-  public apply(val: IRGQLValue) {
+  public apply(val: rgraphql.IRGQLValue) {
     if (this.outOfBounds) {
       return
     }

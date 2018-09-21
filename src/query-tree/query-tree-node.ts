@@ -1,7 +1,7 @@
 import { FieldNode, FieldDefinitionNode, ArgumentNode, GraphQLObjectType } from 'graphql'
 import { ArgsMap, ArgsToProto, CompareArgs, NewArgsMapFromAST } from './args-map'
 import { VariableStore } from '../var-store'
-import { IRGQLQueryTreeNode } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 import { LookupASTType } from '../util/type-lookup'
 import { FieldNotFoundError, TypeNotFoundError } from './errors'
 import { isAstPrimitive, unwrapAstType } from '../util'
@@ -36,8 +36,8 @@ export class QueryTreeNode {
   ) {}
 
   // buildProto constructs the protobuf representation.
-  public buildProto(): IRGQLQueryTreeNode {
-    let children: IRGQLQueryTreeNode[] = []
+  public buildProto(): rgraphql.IRGQLQueryTreeNode {
+    let children: rgraphql.IRGQLQueryTreeNode[] = []
     for (let child of this.children) {
       children.push(child.buildProto())
     }
@@ -131,8 +131,12 @@ export class QueryTreeNode {
     let childFieldTypeUnderlying = unwrapAstType(childFieldType)
     if (!isAstPrimitive(childFieldTypeUnderlying)) {
       let atd = lookupType(childFieldTypeUnderlying)
-      if (atd instanceof GraphQLObjectType) {
-        atdObj = atd
+      if (atd) {
+        // hack
+        let atdv = atd as any
+        if (atdv.astNode && atdv.astNode.kind === 'ObjectTypeDefinition') {
+          atdObj = atd as GraphQLObjectType
+        }
       }
 
       if (!atdObj) {

@@ -2,7 +2,7 @@ import { ResultTree } from '../result-tree/result-tree'
 import { JSONDecoder } from './json-decoder'
 import { QueryTree } from '../query-tree/query-tree'
 import { parse, buildSchema, OperationDefinitionNode } from 'graphql'
-import { CacheStrategy, Kind } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 
 describe('JSONDecoder', () => {
   it('should decode a value stream properly', () => {
@@ -28,13 +28,15 @@ describe('JSONDecoder', () => {
         }
         `)
     let query = qt.buildQuery(queryDefs.definitions[0] as OperationDefinitionNode)
-    let decoder = new JSONDecoder(qt, query)
-    let rtree = new ResultTree(qt, CacheStrategy.CACHE_LRU, 50)
+    let decoder = new JSONDecoder(qt.getRoot(), query)
+    let rtree = new ResultTree(qt, rgraphql.RGQLValueInit.CacheStrategy.CACHE_LRU, 50)
     rtree.addResultHandler(decoder.getResultHandler())
 
     rtree.handleValue({ queryNodeId: 1 })
     rtree.handleValue({ queryNodeId: 2 })
-    rtree.handleValue({ value: { kind: Kind.PRIMITIVE_KIND_STRING, stringValue: 'test' } })
+    rtree.handleValue({
+      value: { kind: rgraphql.RGQLPrimitive.Kind.PRIMITIVE_KIND_STRING, stringValue: 'test' }
+    })
 
     expect(decoder.getResult()).toEqual({ person: { name: 'test' } })
   })

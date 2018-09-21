@@ -21,6 +21,11 @@ export class PathCache {
     return this.cache.get(key) || null
   }
 
+  // reset resets the cache
+  public reset() {
+    this.cache.clear()
+  }
+
   // set sets the cursor by key and value
   public set(key: number, val: PathCursor) {
     this.setWithEvict(key, val)

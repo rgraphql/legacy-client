@@ -1,7 +1,6 @@
-import { IRGQLValue, UnpackPrimitive } from 'rgraphql'
+import { rgraphql, UnpackPrimitive } from 'rgraphql'
 import { QueryTreeNode } from '../query-tree/query-tree-node'
 import { ResultTreeHandler } from '../result-tree/result-tree-handler'
-import util from 'util'
 
 // JSONDecoderHandler is a cursor pointing to part of the result.
 export class JSONDecoderHandler {
@@ -10,11 +9,13 @@ export class JSONDecoderHandler {
   // qnode is the attached query tree node.
   public qnode: QueryTreeNode | undefined
   // pendingValue is a pending previous value
-  public pendingValue: IRGQLValue | undefined
+  public pendingValue: rgraphql.IRGQLValue | undefined
+
+  constructor(private valChangedCb: () => void) {}
 
   // handleValue is a ResultTreeHandler.
-  public handleValue(val: IRGQLValue): ResultTreeHandler {
-    let nextHandler = new JSONDecoderHandler()
+  public handleValue(val: rgraphql.IRGQLValue): ResultTreeHandler {
+    let nextHandler = new JSONDecoderHandler(this.valChangedCb)
     let pendingValue = this.pendingValue
 
     // buildValueParent builds a new container value for the parent
@@ -48,6 +49,9 @@ export class JSONDecoderHandler {
             return null
           }
           this.value[fieldName] = pval
+          if (this.valChangedCb) {
+            this.valChangedCb()
+          }
           if (val.value) {
             return null
           }
@@ -68,6 +72,9 @@ export class JSONDecoderHandler {
             return null
           }
           this.value[idx] = nval
+          if (this.valChangedCb) {
+            this.valChangedCb()
+          }
           if (val.value) {
             return null
           }
@@ -91,7 +98,6 @@ export class JSONDecoderHandler {
       }
     }
 
-    util.inspect(this)
     return nextHandler.handleValue.bind(nextHandler)
   }
 }

@@ -1,14 +1,5 @@
 import { NameCounter } from '../name-counter'
-import { Subject } from 'rxjs/Subject'
-import { ValueNode } from 'graphql'
-import { IASTVariable, PackPrimitive } from 'rgraphql'
-
-import * as _ from 'lodash'
-
-interface IHasValue {
-  kind: string
-  value: any
-}
+import { rgraphql, PackPrimitive, UnpackPrimitive } from 'rgraphql'
 
 // Stored variable reference.
 export interface IVariableReference {
@@ -34,7 +25,7 @@ export class Variable {
 
   constructor(public id: number, public name: string, public value: any) {}
 
-  public toProto(): IASTVariable {
+  public toProto(): rgraphql.IASTVariable {
     return {
       id: this.id,
       value: PackPrimitive(this.value)
@@ -76,8 +67,6 @@ export class Variable {
 
 // Variable storage for GraphQL data.
 export class VariableStore {
-  public newVariables: Subject<Variable> = new Subject<Variable>()
-
   private variableIdCounter = 0
   private variableNameCounter = new NameCounter()
   private variables: { [name: string]: Variable } = {}
@@ -89,14 +78,13 @@ export class VariableStore {
         continue
       }
       let variable = this.variables[variableName]
-      if (_.isEqual(variable.value, value)) {
+      if (variable.value === value) {
         return variable.addReference()
       }
     }
 
     let nvar = new Variable(this.variableIdCounter++, this.variableNameCounter.increment(), value)
     this.variables[nvar.name] = nvar
-    this.newVariables.next(nvar)
     return nvar.addReference()
   }
 

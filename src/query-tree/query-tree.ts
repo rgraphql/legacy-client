@@ -2,7 +2,7 @@ import { OperationDefinitionNode, visit, GraphQLSchema, FieldNode, BREAK } from 
 import { QueryTreeHandler } from './query-tree-handler'
 import { QueryTreeNode } from './query-tree-node'
 import { VariableStore } from '../var-store'
-import { IASTVariable, INodeMutation, SubtreeOperation, IRGQLQueryTreeNode } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 import { Query } from './query'
 import { AttachedQuery } from './query-attached'
 import { getLookupType } from '../util'
@@ -20,7 +20,7 @@ export class QueryTree {
   // varStore is the variable store
   private varStore: VariableStore
   // pendingVariables contains the set of new variables to xmit
-  private pendingVariables: IASTVariable[] = []
+  private pendingVariables: rgraphql.IASTVariable[] = []
 
   constructor(
     // schema is the graphql schema
@@ -99,7 +99,7 @@ export class QueryTree {
             return BREAK
           }
 
-          if (childNode.getRefCount() == 0 && newNodeDepth == 0) {
+          if (childNode.getRefCount() === 0 && newNodeDepth === 0) {
             newNodes.push(childNode)
           }
 
@@ -142,7 +142,7 @@ export class QueryTree {
     }
 
     if (newNodes.length && this.handler) {
-      let nodeMutation: INodeMutation[] = []
+      let nodeMutation: rgraphql.RGQLQueryTreeMutation.INodeMutation[] = []
       for (let n of newNodes) {
         n.markXmitted()
         let parent = n.getParent()
@@ -152,7 +152,7 @@ export class QueryTree {
         nodeMutation.push({
           nodeId: parent.getID(),
           node: n.buildProto(),
-          operation: SubtreeOperation.SUBTREE_ADD_CHILD
+          operation: rgraphql.RGQLQueryTreeMutation.SubtreeOperation.SUBTREE_ADD_CHILD
         })
       }
 
@@ -190,7 +190,7 @@ export class QueryTree {
   }
 
   // buildProto transforms the entire query tree to protobuf format
-  public buildProto(): IRGQLQueryTreeNode {
+  public buildProto(): rgraphql.IRGQLQueryTreeNode {
     return this.root.buildProto()
   }
 
@@ -204,11 +204,11 @@ export class QueryTree {
       allUnrefNodes.concat(unrefNodes)
     })
     if (allUnrefNodes.length && this.handler) {
-      let muts: INodeMutation[] = []
+      let muts: rgraphql.RGQLQueryTreeMutation.INodeMutation[] = []
       for (let n of allUnrefNodes) {
         muts.push({
           nodeId: n.getID(),
-          operation: SubtreeOperation.SUBTREE_DELETE
+          operation: rgraphql.RGQLQueryTreeMutation.SubtreeOperation.SUBTREE_DELETE
         })
       }
       // TODO: set query id

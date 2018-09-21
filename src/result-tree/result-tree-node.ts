@@ -1,5 +1,5 @@
 import { ResultTreeHandler } from './result-tree-handler'
-import { IRGQLValue } from 'rgraphql'
+import { rgraphql } from 'rgraphql'
 
 export class ResultTreeNode {
   // children contains any children of this node
@@ -7,7 +7,7 @@ export class ResultTreeNode {
 
   constructor(
     // value is the value of this node.
-    public value: IRGQLValue
+    public value: rgraphql.IRGQLValue
   ) {}
 
   // callHandler recursively calls handlers with the contents of the tree.

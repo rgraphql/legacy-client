@@ -1,8 +1,7 @@
-import { QueryTree } from '../src/query-tree/query-tree'
-import { QueryTreeNode } from '../src/query-tree/query-tree-node'
-import { QueryTreeHandler } from '../src/query-tree/query-tree-handler'
-import { parse, print, buildSchema, OperationDefinitionNode } from 'graphql'
-import { IRGQLQueryTreeNode, IRGQLQueryTreeMutation } from 'rgraphql'
+import { QueryTree } from './query-tree'
+import { QueryTreeHandler } from './query-tree-handler'
+import { parse, buildSchema, OperationDefinitionNode } from 'graphql'
+import { rgraphql } from 'rgraphql'
 
 function mockSchema() {
   return buildSchema(`
@@ -48,7 +47,7 @@ query mySecondQuery($distance: Int) {
 describe('QueryTreeNode', () => {
   it('should build a tree properly', () => {
     let queryAst = mockAst()
-    let handler: QueryTreeHandler = (mutation: IRGQLQueryTreeMutation) => {
+    let handler: QueryTreeHandler = (mutation: rgraphql.IRGQLQueryTreeMutation) => {
       console.log('Applying:')
       console.log(mutation)
     }
@@ -68,11 +67,11 @@ describe('QueryTreeNode', () => {
   it('should build a proto tree properly', () => {
     let ast = mockAst()
     let schema = mockSchema()
-    let tree = new QueryTree(schema, null)
-    let query = tree.buildQuery(<any>ast.definitions[0], {})
+    let tree = new QueryTree(schema)
+    let query = tree.buildQuery(ast.definitions[0] as OperationDefinitionNode, {})
 
     let res = tree.buildProto()
-    expect(res).toEqual(<IRGQLQueryTreeNode>{
+    expect(res).toEqual({
       id: 0,
       fieldName: '',
       directive: [],
@@ -119,7 +118,7 @@ describe('QueryTreeNode', () => {
           ]
         }
       ]
-    })
+    } as rgraphql.IRGQLQueryTreeNode)
   })
 
   it('should detect differing arguments', () => {
@@ -138,9 +137,9 @@ query mySecondQuery {
 `
     )
     let schema = mockSchema()
-    let node = new QueryTree(schema, null)
-    let sel1 = <any>ast.definitions[0]
-    let sel2 = <any>ast.definitions[1]
+    let node = new QueryTree(schema)
+    let sel1 = ast.definitions[0] as OperationDefinitionNode
+    let sel2 = ast.definitions[1] as OperationDefinitionNode
     let q1 = node.buildQuery(sel1, {})
     let q2 = node.buildQuery(sel2, {})
     // expect(node.children.length).toBe(2)
