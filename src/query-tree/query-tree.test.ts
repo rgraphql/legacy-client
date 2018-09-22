@@ -25,7 +25,7 @@ function mockSchema() {
 function mockAst() {
   return parse(
     `query myQuery {
-  allPeople(age: 40) {
+  allPeople {
     name
   }
   person(distance: 5) {
@@ -33,10 +33,10 @@ function mockAst() {
   }
 }
 query mySecondQuery($distance: Int) {
-  allPeople(age: 40) {
+  allPeople {
     description
   }
-  person(distance: $distance) {
+  person(distance: 5) {
     age
   }
 }
@@ -64,62 +64,6 @@ describe('QueryTreeNode', () => {
     // expect(tree.children.length).toBe(0);
     console.log(queryb)
   })
-  it('should build a proto tree properly', () => {
-    let ast = mockAst()
-    let schema = mockSchema()
-    let tree = new QueryTree(schema)
-    let query = tree.buildQuery(ast.definitions[0] as OperationDefinitionNode, {})
-
-    let res = tree.buildProto()
-    expect(res).toEqual({
-      id: 0,
-      fieldName: '',
-      directive: [],
-      args: [],
-      children: [
-        {
-          id: 1,
-          fieldName: 'allPeople',
-          directive: [],
-          args: [
-            {
-              name: 'age',
-              variableId: 0
-            }
-          ],
-          children: [
-            {
-              id: 2,
-              fieldName: 'name',
-              directive: [],
-              args: [],
-              children: []
-            }
-          ]
-        },
-        {
-          id: 3,
-          fieldName: 'person',
-          directive: [],
-          args: [
-            {
-              name: 'distance',
-              variableId: 1
-            }
-          ],
-          children: [
-            {
-              id: 4,
-              fieldName: 'name',
-              directive: [],
-              args: [],
-              children: []
-            }
-          ]
-        }
-      ]
-    } as rgraphql.IRGQLQueryTreeNode)
-  })
 
   it('should detect differing arguments', () => {
     let ast = parse(
@@ -143,5 +87,28 @@ query mySecondQuery {
     let q1 = node.buildQuery(sel1, {})
     let q2 = node.buildQuery(sel2, {})
     // expect(node.children.length).toBe(2)
+  })
+
+  it('should build a tree mutation stream', () => {
+    let queryAst = mockAst()
+    let muts: rgraphql.IRGQLQueryTreeMutation[] = []
+    let handler: QueryTreeHandler = (mutation: rgraphql.IRGQLQueryTreeMutation) => {
+      muts.push(mutation)
+    }
+    let schema = mockSchema()
+    let tree = new QueryTree(schema, handler)
+
+    let querya = tree.buildQuery(queryAst.definitions[0] as OperationDefinitionNode, {})
+    console.log(JSON.stringify(muts, undefined, '  '))
+    let queryb = tree.buildQuery(queryAst.definitions[1] as OperationDefinitionNode, {
+      distance: 10
+    })
+    console.log(JSON.stringify(muts, undefined, '  '))
+    // expect(tree.children.length).toBe(3)
+
+    tree.detach(querya)
+    // expect(tree.children.length).toBe(0);
+    console.log(queryb)
+    expect(muts.length).toBe(3)
   })
 })

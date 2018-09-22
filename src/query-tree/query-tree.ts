@@ -101,10 +101,12 @@ export class QueryTree {
 
           if (childNode.getRefCount() === 0 && newNodeDepth === 0) {
             newNodes.push(childNode)
+            newNodeDepth++
+          } else if (newNodeDepth) {
+            newNodeDepth++
           }
 
           childNode.incRefCount()
-          newNodeDepth++
           attachedQuery.appendQueryNode(childNode)
           qnode = childNode
           return
@@ -117,13 +119,13 @@ export class QueryTree {
 
           if (newNodeDepth) {
             newNodeDepth--
-            let parent = qnode.getParent()
-            if (!parent) {
-              throw new Error('expected parent but found none')
-            }
-            qnode = parent
           }
 
+          let parent = qnode.getParent()
+          if (!parent) {
+            throw new Error('expected parent but found none')
+          }
+          qnode = parent
           return false
         }
       }
@@ -201,7 +203,7 @@ export class QueryTree {
       if (!unrefNodes || !unrefNodes.length) {
         return
       }
-      allUnrefNodes.concat(unrefNodes)
+      allUnrefNodes = allUnrefNodes.concat(unrefNodes)
     })
     if (allUnrefNodes.length && this.handler) {
       let muts: rgraphql.RGQLQueryTreeMutation.INodeMutation[] = []

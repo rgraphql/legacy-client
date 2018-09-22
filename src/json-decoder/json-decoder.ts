@@ -36,9 +36,11 @@ export class JSONDecoder {
 
   // flush flushes any pending change callbacks
   public flush() {
+    /*
     if (!this.dirty) {
       return
     }
+    */
 
     this.dirty = false
     if (this.resultCb) {

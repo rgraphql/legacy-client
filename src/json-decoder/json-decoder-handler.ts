@@ -7,9 +7,12 @@ export class JSONDecoderHandler {
   // value is the current selected value position
   public value: any
   // qnode is the attached query tree node.
-  public qnode: QueryTreeNode | undefined
+  public qnode?: QueryTreeNode
+
+  // applyValue applies at the previously selected position
+  public applyValue?: (override: boolean, getVal: () => any) => any
   // pendingValue is a pending previous value
-  public pendingValue: rgraphql.IRGQLValue | undefined
+  public pendingValue?: rgraphql.IRGQLValue
 
   constructor(private valChangedCb: () => void) {}
 
@@ -18,82 +21,74 @@ export class JSONDecoderHandler {
     let nextHandler = new JSONDecoderHandler(this.valChangedCb)
     let pendingValue = this.pendingValue
 
-    // buildValueParent builds a new container value for the parent
-    const buildValueParent = () => {
-      if (val.arrayIndex) {
-        return []
-      } else if (val.queryNodeId) {
-        return {}
-      } else if (val.value) {
-        return UnpackPrimitive(val.value)
-      }
-      return undefined
-    }
-
-    if (pendingValue) {
-      // If the parent is a pending query_node selector
-      if (pendingValue.queryNodeId) {
-        if (!this.qnode) {
-          return null
-        }
-        let childQn = this.qnode.lookupChildByID(pendingValue.queryNodeId)
-        if (!childQn) {
-          return null
-        }
-
-        let fieldName = childQn.getName()
-        let pval: any
-        if (!this.value.hasOwnProperty(fieldName)) {
-          pval = buildValueParent()
-          if (pval === undefined) {
-            return null
-          }
-          this.value[fieldName] = pval
-          if (this.valChangedCb) {
-            this.valChangedCb()
-          }
-          if (val.value) {
-            return null
-          }
-        } else {
-          pval = this.value[fieldName]
-        }
-
-        nextHandler.value = pval
-        nextHandler.pendingValue = val
-        nextHandler.qnode = childQn
-      } else if (pendingValue.arrayIndex) {
-        let idx = (pendingValue.arrayIndex || 0) - 1
-        // value is an array
-        let nval = this.value[idx]
-        if (nval === undefined) {
-          nval = buildValueParent()
-          if (nval === undefined) {
-            return null
-          }
-          this.value[idx] = nval
-          if (this.valChangedCb) {
-            this.valChangedCb()
-          }
-          if (val.value) {
-            return null
-          }
-        }
-        nextHandler.value = nval
-        nextHandler.pendingValue = val
-        nextHandler.qnode = this.qnode
-      } else {
-        // unexpected, usually pendingValue has an arrayIndex or a queryNode
+    if (val.queryNodeId) {
+      if (!this.qnode) {
         return null
       }
-    } else {
-      if (val.arrayIndex || val.queryNodeId) {
-        nextHandler.value = this.value
-        nextHandler.pendingValue = val
-        nextHandler.qnode = this.qnode
+
+      let childQnode = this.qnode.lookupChildByID(val.queryNodeId || 0)
+      if (!childQnode) {
+        return null
+      }
+      let childFieldName = childQnode.getName()
+
+      let nval: any
+      if (this.applyValue) {
+        nval = this.applyValue(false, () => {
+          return {}
+        })
       } else {
-        // Value without a query_node or array_idx selector
-        // Can't process this.
+        nval = this.value
+      }
+
+      nextHandler.applyValue = (override: boolean, getVal: () => any) => {
+        if (override || !this.value.hasOwnProperty(childFieldName)) {
+          let nxval = getVal()
+          nval[childFieldName] = nxval
+          if (this.valChangedCb) {
+            this.valChangedCb()
+          }
+          return nxval
+        }
+        return nval[childFieldName]
+      }
+      nextHandler.value = nval
+      nextHandler.qnode = childQnode
+    } else if (val.arrayIndex) {
+      let nval: any[]
+      if (this.applyValue) {
+        nval = this.applyValue(false, () => {
+          return []
+        })
+      } else {
+        nval = this.value
+      }
+
+      let idx = (val.arrayIndex || 1) - 1
+      nextHandler.qnode = this.qnode
+      nextHandler.applyValue = (override: boolean, getVal: () => any) => {
+        if (override || nval[idx] === undefined) {
+          let nxval = getVal()
+          nval[idx] = nxval
+          if (this.valChangedCb) {
+            this.valChangedCb()
+          }
+          return nxval
+        }
+        return nval[idx]
+      }
+    } else {
+      nextHandler = this
+    }
+
+    if (val.value) {
+      if (nextHandler.applyValue) {
+        let unpacked = UnpackPrimitive(val.value)
+        nextHandler.applyValue(true, () => {
+          return unpacked
+        })
+      } else {
+        // cannot process w/o applyValue function
         return null
       }
     }

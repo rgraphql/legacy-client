@@ -19,6 +19,7 @@ export class PathCursor {
     let rtn: ResultTreeNode | undefined
     let isQnode = !!val.queryNodeId
     let isArray = !!val.arrayIndex
+    let isValue = !!val.value
     if (isQnode) {
       let valQnID = val.queryNodeId || 0
       let nqn = this.qnode.lookupChildByID(valQnID)
@@ -28,7 +29,6 @@ export class PathCursor {
       }
 
       this.qnode = nqn
-
       for (let child of this.rnode.children) {
         if (child.value.queryNodeId === valQnID) {
           rtn = child
@@ -48,15 +48,14 @@ export class PathCursor {
         }
       }
     } else {
-      if (this.rnode.children.length !== 0) {
-        rtn = this.rnode.children[0]
-        rtn.value = val
-      }
+      rtn = this.rnode
     }
 
     if (!rtn) {
       rtn = new ResultTreeNode(val)
       this.rnode.children.push(rtn)
+    } else if (isValue) {
+      rtn.value = val
     }
 
     let nextHandlers: ResultTreeHandler[] = []

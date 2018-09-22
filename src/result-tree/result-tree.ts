@@ -71,6 +71,10 @@ export class ResultTree {
 
         this.cursor = posIDCursor.clone()
         delete val.posIdentifier
+        if (val.value) {
+          this.cursor.apply({ value: val.value })
+          this.cursor = null
+        }
         return
       }
 
@@ -85,6 +89,9 @@ export class ResultTree {
     let nPosID = val.posIdentifier
     if (nPosID) {
       this.pathCache.set(nPosID, this.cursor.clone())
+    }
+    if (val.value) {
+      this.cursor = null
     }
   }
 
@@ -107,7 +114,7 @@ export class ResultTree {
 
       for (let hPair of this.handlers) {
         if (hPair.handler === rth) {
-          hPair.cursors.concat(attachedCursors)
+          hPair.cursors = hPair.cursors.concat(attachedCursors)
           for (let cursor of hPair.cursors) {
             cursor.resultHandlers.push(rth)
           }

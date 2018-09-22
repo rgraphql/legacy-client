@@ -218,6 +218,12 @@ export class QueryTreeNode {
 
   // markXmitted marks the node as transmitted.
   public markXmitted() {
+    if (this.xmitted) {
+      return
+    }
     this.xmitted = true
+    for (let child of this.children) {
+      child.markXmitted()
+    }
   }
 }
