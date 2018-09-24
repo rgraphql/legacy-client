@@ -1,5 +1,5 @@
 import { OperationDefinitionNode, visit, GraphQLSchema, FieldNode, BREAK } from 'graphql'
-import { QueryTreeHandler } from './query-tree-handler'
+import { QueryTreeHandler, QueryNodePurgeHandler } from './query-tree-handler'
 import { QueryTreeNode } from './query-tree-node'
 import { VariableStore } from '../var-store'
 import { rgraphql } from 'rgraphql'
@@ -21,12 +21,16 @@ export class QueryTree {
   private varStore: VariableStore
   // pendingVariables contains the set of new variables to xmit
   private pendingVariables: rgraphql.IASTVariable[] = []
+  // handlers are all query tree handlers
+  private handlers: QueryTreeHandler[]
+  // qtNodePurgeHandlers are all query tree node purge handlers
+  private qtNodePurgeHandlers: QueryNodePurgeHandler[] = []
 
   constructor(
     // schema is the graphql schema
     private schema: GraphQLSchema,
     // handler handles changes to the tree.
-    private handler?: QueryTreeHandler
+    handler?: QueryTreeHandler
   ) {
     let queryType = schema.getQueryType()
     if (!queryType) {
@@ -35,6 +39,10 @@ export class QueryTree {
 
     this.varStore = new VariableStore()
     this.root = new QueryTreeNode(0, '', queryType, this.varStore)
+    this.handlers = []
+    if (handler) {
+      this.handlers.push(handler)
+    }
   }
 
   // getGraphQLSchema returns the graphQL schema.
@@ -143,7 +151,7 @@ export class QueryTree {
       throw validateErr
     }
 
-    if (newNodes.length && this.handler) {
+    if (newNodes.length && this.handlers.length) {
       let nodeMutation: rgraphql.RGQLQueryTreeMutation.INodeMutation[] = []
       for (let n of newNodes) {
         n.markXmitted()
@@ -159,7 +167,7 @@ export class QueryTree {
       }
 
       // TODO: set query ID?
-      this.handler({
+      this.emitToHandlers({
         nodeMutation,
         variables: this.pendingVariables
       })
@@ -191,6 +199,38 @@ export class QueryTree {
     }
   }
 
+  // attachHandler attaches a handler to the handlers set.
+  public attachHandler(handler: QueryTreeHandler) {
+    this.handlers.push(handler)
+  }
+
+  // removeHandler removes a handler.
+  public removeHandler(handler: QueryTreeHandler) {
+    for (let i = 0; i < this.handlers.length; i++) {
+      if (this.handlers[i] === handler) {
+        this.handlers[i] = this.handlers[this.handlers.length - 1]
+        this.handlers.splice(this.handlers.length - 1, 1)
+        break
+      }
+    }
+  }
+
+  // attachQtNodePurgeHandler attaches a query tree node purge handler.
+  public attachQtNodePurgeHandler(handler: QueryNodePurgeHandler) {
+    this.qtNodePurgeHandlers.push(handler)
+  }
+
+  // detachQtNodePurgeHandler detaches a query tree node purge handler.
+  public detachQtNodePurgeHandler(handler: QueryNodePurgeHandler) {
+    for (let i = 0; i < this.qtNodePurgeHandlers.length; i++) {
+      if (this.qtNodePurgeHandlers[i] === handler) {
+        this.qtNodePurgeHandlers[i] = this.qtNodePurgeHandlers[this.qtNodePurgeHandlers.length - 1]
+        this.qtNodePurgeHandlers.splice(this.qtNodePurgeHandlers.length - 1, 1)
+        break
+      }
+    }
+  }
+
   // buildProto transforms the entire query tree to protobuf format
   public buildProto(): rgraphql.IRGQLQueryTreeNode {
     return this.root.buildProto()
@@ -205,7 +245,7 @@ export class QueryTree {
       }
       allUnrefNodes = allUnrefNodes.concat(unrefNodes)
     })
-    if (allUnrefNodes.length && this.handler) {
+    if (allUnrefNodes.length) {
       let muts: rgraphql.RGQLQueryTreeMutation.INodeMutation[] = []
       for (let n of allUnrefNodes) {
         muts.push({
@@ -213,10 +253,26 @@ export class QueryTree {
           operation: rgraphql.RGQLQueryTreeMutation.SubtreeOperation.SUBTREE_DELETE
         })
       }
-      // TODO: set query id
-      this.handler({
+      this.emitToHandlers({
         nodeMutation: muts
       })
+      this.emitToPurgeHandlers(allUnrefNodes)
+    }
+  }
+
+  // emitToHandlers emits a mutation to handlers.
+  private emitToHandlers(mut: rgraphql.IRGQLQueryTreeMutation) {
+    for (let handler of this.handlers) {
+      handler(mut)
+    }
+  }
+
+  // emitToPurgeHandlers emits a set of query tree nodes to the purge handlers.
+  private emitToPurgeHandlers(nodes: QueryTreeNode[]) {
+    for (let purgeHandler of this.qtNodePurgeHandlers) {
+      for (let node of nodes) {
+        purgeHandler(node)
+      }
     }
   }
 }

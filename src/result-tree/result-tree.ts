@@ -5,6 +5,8 @@ import { ResultTreeNode } from './result-tree-node'
 import { ResultTreeHandler } from './result-tree-handler'
 import { Query } from '../query-tree/query'
 import { rgraphql } from 'rgraphql'
+import { QueryTreeNode } from '../query-tree/query-tree-node'
+import { QueryNodePurgeHandler } from '../query-tree/query-tree-handler'
 
 // IAttachedHandler is an attached query tree handler.
 interface IAttachedHandler {
@@ -30,6 +32,7 @@ export class ResultTree {
   private rootCursor: PathCursor
   private handlers: IAttachedHandler[] = []
   private cachedCursors: IAttachedCursor[] = []
+  private qtPurgeHandler: QueryNodePurgeHandler
 
   constructor(
     private qtree: QueryTree,
@@ -43,6 +46,8 @@ export class ResultTree {
     this.root = new ResultTreeNode({})
     this.rootCursor = new PathCursor(qtree.getRoot(), this.root)
     this.pathCache = new PathCache(cacheSize, this.handleCursorEvict.bind(this))
+    this.qtPurgeHandler = this.handleQtNodePurge.bind(this)
+    qtree.attachQtNodePurgeHandler(this.qtPurgeHandler)
   }
 
   // reset resets the result tree and state.
@@ -54,6 +59,16 @@ export class ResultTree {
     this.rootCursor.outOfBounds = false
     this.pathCache.reset()
     this.cursor = null
+  }
+
+  // detach detaches the handlers from the query tree.
+  public detach() {
+    this.qtree.detachQtNodePurgeHandler(this.qtPurgeHandler)
+  }
+
+  // getRoot returns the root node.
+  public getRoot(): ResultTreeNode {
+    return this.root
   }
 
   // handleValue handles an incoming value.
@@ -122,6 +137,9 @@ export class ResultTree {
         }
       }
     })
+    if (flush) {
+      flush()
+    }
   }
 
   // flushHandlers calls flush on each handler
@@ -168,6 +186,72 @@ export class ResultTree {
   // handleCursorEvict handles when a cursor is removed from the cache.
   private handleCursorEvict(cursor: PathCursor) {
     this.purgeCursor(cursor)
+  }
+
+  // handleQtNodePurge handles a node being purged from the query tree.
+  private handleQtNodePurge(nod: QueryTreeNode | null) {
+    // traverse to root
+    // lock-step result tree
+    // rtNode{root},
+    //  - for child in children, if qnid == nodIds[i]
+    //  - recursively purge
+    let purgeQnIDs: number[] = []
+    while (nod) {
+      purgeQnIDs.push(nod.getID())
+      nod = nod.getParent()
+    }
+
+    // purgeQnIDs = 5, 3, 2, 0
+    let allHandlers: ResultTreeHandler[] = []
+    for (let rth of this.handlers) {
+      allHandlers.push(rth.handler)
+    }
+    this.purgeQtNodesRecursive(purgeQnIDs.length - 2, purgeQnIDs, this.root, allHandlers)
+    console.log(JSON.stringify(this.root))
+  }
+
+  // purgeQtNodesRecursive purges any result tree nodes matching the qtnode selector.
+  // furthermore, it informs the attached handlers.
+  private purgeQtNodesRecursive(
+    idx: number,
+    purgeQnIDs: number[],
+    rnode: ResultTreeNode,
+    handlers: ResultTreeHandler[]
+  ) {
+    let qnid = purgeQnIDs[idx]
+    let getNextHandlers = (rnode: ResultTreeNode): ResultTreeHandler[] => {
+      let nh: ResultTreeHandler[] = []
+      for (let handler of handlers) {
+        if (!handler) continue
+        let nnh = handler(rnode.value)
+        if (nnh) {
+          nh.push(nnh)
+        }
+      }
+      return nh
+    }
+    for (let i = 0; i < rnode.children.length; i++) {
+      let rchild = rnode.children[i]
+      if (rchild.value.queryNodeId === qnid) {
+        if (idx === 0) {
+          delete rchild.value.value
+          rnode.children[i] = rnode.children[rnode.children.length - 1]
+          rnode.children.splice(rnode.children.length - 1, 1)
+          i--
+          for (let handler of handlers) {
+            if (!handler) continue
+            let nh = handler(rchild.value)
+            if (nh) {
+              nh(undefined)
+            }
+          }
+        } else {
+          this.purgeQtNodesRecursive(idx - 1, purgeQnIDs, rchild, getNextHandlers(rchild))
+        }
+      } else if (rchild.value.arrayIndex) {
+        this.purgeQtNodesRecursive(idx, purgeQnIDs, rchild, getNextHandlers(rchild))
+      }
+    }
   }
 
   // purgeCursor purges the cursor from the rnode set

@@ -80,4 +80,24 @@ describe('JSONDecoder', () => {
 
     expect(decoder.getResult()).toEqual({ people: [{ name: 'Joe', height: 6 }] })
   })
+  it('should decode a field alias properly', () => {
+    let qt = new QueryTree(schema)
+    let queryDefs = parse(`
+        {
+            people {
+                na: name
+            }
+        }
+        `)
+    let query = qt.buildQuery(queryDefs.definitions[0] as OperationDefinitionNode)
+    let decoder = new JSONDecoder(qt.getRoot(), query)
+    let rtree = new ResultTree(qt, rgraphql.RGQLValueInit.CacheStrategy.CACHE_LRU, 50)
+    rtree.addResultHandler(decoder.getResultHandler())
+
+    rtree.handleValue({ queryNodeId: 1 })
+    rtree.handleValue({ arrayIndex: 1 })
+    rtree.handleValue({ queryNodeId: 2, value: PackPrimitive('Joe') })
+
+    expect(decoder.getResult()).toEqual({ people: [{ na: 'Joe' }] })
+  })
 })
