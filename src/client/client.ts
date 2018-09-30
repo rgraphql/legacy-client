@@ -1,7 +1,7 @@
 import { RunningQuery } from './query'
 import { QueryTree } from '../query-tree/query-tree'
 import { ResultTree } from '../result-tree/result-tree'
-import { GraphQLSchema, OperationDefinitionNode } from 'graphql'
+import { GraphQLSchema, OperationDefinitionNode, parse } from 'graphql'
 import { rgraphql } from 'rgraphql'
 import { Query } from '../query-tree/query'
 
@@ -43,6 +43,23 @@ export class SoyuzClient {
     })
     this.queries[rq.getQuery().getQueryID()] = rq
     return rq
+  }
+
+  // parseQuery parses and builds a query.
+  public parseQuery(source: string, variables?: { [key: string]: any } | null): RunningQuery {
+    let defs = parse(source)
+    let def: OperationDefinitionNode | undefined
+    for (let defi of defs.definitions) {
+      if (defi.kind === 'OperationDefinition' && defi.operation) {
+        def = defi
+      }
+    }
+
+    if (!def) {
+      throw new Error('no query definition found in source')
+    }
+
+    return this.buildQuery(def, variables)
   }
 
   // getQueryTree returns the query tree.
