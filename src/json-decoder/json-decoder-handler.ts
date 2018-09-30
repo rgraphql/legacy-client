@@ -20,7 +20,6 @@ export class JSONDecoderHandler {
   // handleValue is a ResultTreeHandler.
   public handleValue(val: rgraphql.IRGQLValue | undefined): ResultTreeHandler {
     let nextHandler = new JSONDecoderHandler(this.queryAST, this.valChangedCb)
-    let pendingValue = this.pendingValue
 
     if (val === undefined) {
       if (this.applyValue) {
@@ -43,6 +42,7 @@ export class JSONDecoderHandler {
       let childFieldName = childQnode.getName()
       let childResultFieldName = childFieldName
 
+      let childFound = false
       let childAST: SelectionSetNode | undefined
       if (this.queryAST) {
         visit(this.queryAST, {
@@ -53,6 +53,7 @@ export class JSONDecoderHandler {
                   childResultFieldName = node.alias.value
                 }
                 childAST = node.selectionSet
+                childFound = true
                 return BREAK
               }
 
@@ -60,6 +61,10 @@ export class JSONDecoderHandler {
             }
           }
         })
+      }
+
+      if (!childFound) {
+        return null
       }
 
       let nval: any
