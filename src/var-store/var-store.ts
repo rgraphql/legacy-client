@@ -65,11 +65,16 @@ export class Variable {
   }
 }
 
+// AddVariableCallback is called when a new variable is added.
+export type AddVariableCallback = (varb: Variable) => void
+
 // Variable storage for GraphQL data.
 export class VariableStore {
   private variableIdCounter = 0
   private variableNameCounter = new NameCounter()
   private variables: { [name: string]: Variable } = {}
+
+  constructor(private cb: AddVariableCallback) {}
 
   // Get or create a variable.
   public getVariable(value: any): IVariableReference {
@@ -85,6 +90,7 @@ export class VariableStore {
 
     let nvar = new Variable(this.variableIdCounter++, this.variableNameCounter.increment(), value)
     this.variables[nvar.name] = nvar
+    this.cb(nvar)
     return nvar.addReference()
   }
 

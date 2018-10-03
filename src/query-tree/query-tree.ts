@@ -1,8 +1,8 @@
 import { OperationDefinitionNode, visit, GraphQLSchema, FieldNode, BREAK } from 'graphql'
 import { QueryTreeHandler, QueryNodePurgeHandler } from './query-tree-handler'
 import { QueryTreeNode } from './query-tree-node'
-import { VariableStore } from '../var-store'
-import { rgraphql } from 'rgraphql'
+import { VariableStore, Variable } from '../var-store'
+import { rgraphql, PackPrimitive } from 'rgraphql'
 import { Query } from './query'
 import { AttachedQuery } from './query-attached'
 import { getLookupType } from '../util'
@@ -37,7 +37,7 @@ export class QueryTree {
       throw new Error('schema has no query type definedj')
     }
 
-    this.varStore = new VariableStore()
+    this.varStore = new VariableStore(this.handleNewVariable.bind(this))
     this.root = new QueryTreeNode(0, '', queryType, this.varStore)
     this.handlers = []
     if (handler) {
@@ -274,5 +274,9 @@ export class QueryTree {
         purgeHandler(node)
       }
     }
+  }
+
+  private handleNewVariable(varb: Variable) {
+    this.pendingVariables.push(varb.toProto())
   }
 }

@@ -1,10 +1,12 @@
-import { VariableStore } from './var-store'
+import { VariableStore, Variable } from './var-store'
 
 describe('QueryTreeNode', () => {
   let store: VariableStore
 
   beforeEach(() => {
-    store = new VariableStore()
+    store = new VariableStore((vb: Variable) => {
+      //
+    })
   })
 
   it('should add a variable properly', () => {
