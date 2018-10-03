@@ -2,6 +2,8 @@ import { rgraphql, UnpackPrimitive } from 'rgraphql'
 import { QueryTreeNode } from '../query-tree/query-tree-node'
 import { ResultTreeHandler } from '../result-tree/result-tree-handler'
 import { SelectionSetNode, visit, SelectionNode, FieldNode, BREAK } from 'graphql'
+import { QueryMap, QueryMapElem } from '../query-tree/query-map'
+import { Query } from '../query-tree/query'
 
 // JSONDecoderHandler is a cursor pointing to part of the result.
 export class JSONDecoderHandler {
@@ -15,11 +17,11 @@ export class JSONDecoderHandler {
   // pendingValue is a pending previous value
   public pendingValue?: rgraphql.IRGQLValue
 
-  constructor(private queryAST: SelectionSetNode | undefined, private valChangedCb: () => void) {}
+  constructor(private queryMap: QueryMap | undefined, private valChangedCb: () => void) {}
 
   // handleValue is a ResultTreeHandler.
   public handleValue(val: rgraphql.IRGQLValue | undefined): ResultTreeHandler {
-    let nextHandler = new JSONDecoderHandler(this.queryAST, this.valChangedCb)
+    let nextHandler = new JSONDecoderHandler(this.queryMap, this.valChangedCb)
 
     if (val === undefined) {
       if (this.applyValue) {
@@ -42,28 +44,17 @@ export class JSONDecoderHandler {
       let childFieldName = childQnode.getName()
       let childResultFieldName = childFieldName
 
-      let childFound = false
-      let childAST: SelectionSetNode | undefined
-      if (this.queryAST) {
-        visit(this.queryAST, {
-          Field: {
-            enter(node: FieldNode) {
-              if (node.name && node.name.value === childFieldName) {
-                if (node.alias && node.alias.value) {
-                  childResultFieldName = node.alias.value
-                }
-                childAST = node.selectionSet
-                childFound = true
-                return BREAK
-              }
-
-              return false // no need to traverse further
-            }
+      let childQme: QueryMapElem | undefined
+      if (this.queryMap) {
+        childQme = this.queryMap[val.queryNodeId || 0]
+        if (childQme) {
+          if (childQme.alias && childQme.alias.length) {
+            childResultFieldName = childQme.alias
           }
-        })
+        }
       }
 
-      if (!childFound) {
+      if (!childQme) {
         return null
       }
 
@@ -76,9 +67,13 @@ export class JSONDecoderHandler {
         nval = this.value
       }
 
-      nextHandler.queryAST = childAST
+      nextHandler.queryMap = childQme.selections
       nextHandler.applyValue = (override: boolean, getVal: () => any) => {
-        if (override || !this.value.hasOwnProperty(childResultFieldName)) {
+        if (
+          override ||
+          !nval.hasOwnProperty(childResultFieldName) ||
+          nval[childResultFieldName] === null
+        ) {
           let nxval = getVal()
           if (nxval === undefined) {
             delete nval[childResultFieldName]

@@ -1,4 +1,5 @@
 import { OperationDefinitionNode, visit, GraphQLSchema, FieldNode, BREAK } from 'graphql'
+import { QueryMap, QueryMapElem } from './query-map'
 import { QueryTreeHandler, QueryNodePurgeHandler } from './query-tree-handler'
 import { QueryTreeNode } from './query-tree-node'
 import { VariableStore, Variable } from '../var-store'
@@ -82,6 +83,9 @@ export class QueryTree {
     let newNodes: QueryTreeNode[] = []
     let newNodeDepth = 0
 
+    let qmap: QueryMap = {}
+    let qmapStack: QueryMap[] = [qmap]
+
     visit(query.ast, {
       Field: {
         enter(node: FieldNode) {
@@ -117,12 +121,28 @@ export class QueryTree {
           childNode.incRefCount()
           attachedQuery.appendQueryNode(childNode)
           qnode = childNode
+
+          let qme = qmapStack[qmapStack.length - 1]
+          let elem: QueryMapElem = {}
+          if (node.selectionSet && node.selectionSet.selections.length) {
+            let childQm: QueryMap = {}
+            elem.selections = childQm
+            qmapStack.push(childQm)
+          }
+          if (node.alias && node.alias.value) {
+            elem.alias = node.alias.value
+          }
+          qme[qnode.getID()] = elem
           return
         },
         leave(node: FieldNode) {
           // leave the field node
           if (!node.name || !node.name.value || !node.name.value.length) {
             return false
+          }
+
+          if (node.selectionSet && node.selectionSet.selections.length) {
+            qmapStack.length -= 1
           }
 
           if (newNodeDepth) {
@@ -176,6 +196,7 @@ export class QueryTree {
     this.pendingVariables = []
     this.attachedQueries[query.getQueryID()] = attachedQuery
     this.gcSweep()
+    query.setQueryMap(qmap)
   }
 
   // detach detaches a query from the tree.

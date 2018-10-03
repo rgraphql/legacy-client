@@ -86,14 +86,16 @@ export class ResultTree {
 
         this.cursor = posIDCursor.clone()
         delete val.posIdentifier
+        /*
         if (val.value) {
           this.cursor.apply({ value: val.value })
           this.cursor = null
         }
-        return
+        */
+        // return
+      } else {
+        this.cursor = this.rootCursor.clone()
       }
-
-      this.cursor = this.rootCursor.clone()
     }
 
     if (!this.cursor) {
@@ -207,7 +209,6 @@ export class ResultTree {
       allHandlers.push(rth.handler)
     }
     this.purgeQtNodesRecursive(purgeQnIDs.length - 2, purgeQnIDs, this.root, allHandlers)
-    console.log(JSON.stringify(this.root))
   }
 
   // purgeQtNodesRecursive purges any result tree nodes matching the qtnode selector.

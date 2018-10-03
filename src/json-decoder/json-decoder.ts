@@ -50,7 +50,8 @@ export class JSONDecoder {
 
   // getResultHandler returns the result tree handler function.
   public getResultHandler(): ResultTreeHandler {
-    let handler = new JSONDecoderHandler(this.query.ast.selectionSet, () => {
+    let qmap = this.query.getQueryMap() || undefined
+    let handler = new JSONDecoderHandler(qmap, () => {
       this.dirty = true
     })
     handler.qnode = this.qnode

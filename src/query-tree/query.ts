@@ -1,7 +1,11 @@
-import { OperationDefinitionNode } from 'graphql'
+import { OperationDefinitionNode, visit } from 'graphql'
+import { QueryMap } from './query-map'
 
 // Query is a query operation attached to a query tree.
 export class Query {
+  // queryMap is the query map
+  private queryMap: QueryMap | undefined
+
   constructor(
     // queryID is a unique ID used to identify the query in the query tree.
     private queryID: number,
@@ -15,6 +19,18 @@ export class Query {
     }
     if (ast.operation !== 'query') {
       throw new Error('unsupported operation: ' + ast.operation)
+    }
+  }
+
+  // getQueryMap returns the query map
+  public getQueryMap(): QueryMap | null {
+    return this.queryMap || null
+  }
+
+  // setQueryMap sets the query map
+  public setQueryMap(qm: QueryMap) {
+    if (qm) {
+      this.queryMap = qm
     }
   }
 
