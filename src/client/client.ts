@@ -103,4 +103,9 @@ export class SoyuzClient {
     this.queryTree.detach(query)
     delete this.queries[query.getQueryID()]
   }
+
+  // dispose cleans up all queries and disposes the query tree.
+  public dispose() {
+    this.sendMsg({ finishQuery: { queryId: this.queryID } })
+  }
 }
