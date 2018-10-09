@@ -113,6 +113,6 @@
   "dependencies": {
     "graphql": "^14.0.2",
     "lru_map": "^0.3.3",
-    "rgraphql": "^0.7.3"
+    "rgraphql": "^1.0.0"
   }
 }

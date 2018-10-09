@@ -4670,10 +4670,10 @@ revalidator@0.1.x:
   resolved "https://registry.yarnpkg.com/revalidator/-/revalidator-0.1.8.tgz#fece61bfa0c1b52a206bd6b18198184bdd523a3b"
   integrity sha1-/s5hv6DBtSoga9axgZgYS91SOjs=
 
-rgraphql@^0.7.3:
-  version "0.7.3"
-  resolved "https://registry.yarnpkg.com/rgraphql/-/rgraphql-0.7.3.tgz#5dca0958418a319757b6ed44eb72cf20d9f62c7f"
-  integrity sha512-RCoct0fq3/BQsG0qS5dAyImSTfpgkvOveyL2u0HICsC99wKfjoKfmSJ9ET2FEkhmZE8qMWvMKdtOX8YZbMPOcA==
+rgraphql@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/rgraphql/-/rgraphql-1.0.0.tgz#148ce2829f0a1843387781c79e09443e2065fd4c"
+  integrity sha512-i75OXRHGnKIp0zzwFlK3miJkBE+iVGTwhxz3s28Y6QeTXakbc2378woVbzRk12yQQKPHQx84pZsadyrHPlXZrQ==
   dependencies:
     graphql "^14.0.0"
     protobufjs "^6.0.0"
