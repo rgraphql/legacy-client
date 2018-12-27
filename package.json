@@ -1,5 +1,5 @@
 {
-  "name": "soyuz",
+  "name": "soyuz-rewrite",
   "version": "0.0.0-development",
   "description": "Fast, minimal, streaming GraphQL client.",
   "keywords": [],
