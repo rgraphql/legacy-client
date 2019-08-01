@@ -1,5 +1,6 @@
 {
-  "name": "soyuz",
+  "name": "soyuz-nion",
+  "private": true,
   "version": "0.0.0-development",
   "description": "Fast, minimal, streaming GraphQL client.",
   "keywords": [],
@@ -21,16 +22,19 @@
   "scripts": {
     "lint": "tslint  --project tsconfig.json -t codeFrame 'src/**/*.ts' 'test/**/*.ts'",
     "prebuild": "rimraf dist",
-    "prepare": "npm run build-fast",
-    "build-fast": "tsc --module commonjs && rollup -c rollup.config.ts",
-    "build": "npm run build-fast && typedoc --out docs --target es6 --theme minimal --mode file src",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts && typedoc --out docs --target es6 --theme minimal --mode file src",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:prod": "npm run lint && npm run test -- --coverage --no-cache",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
-    "commit": "git-cz",
-    "precommit": "lint-staged"
+    "commit": "git-cz"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [
