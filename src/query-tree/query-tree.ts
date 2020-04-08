@@ -48,7 +48,7 @@ export class QueryTree {
 
   // getGraphQLSchema returns the graphQL schema.
   public getGraphQLSchema(): GraphQLSchema {
-    return this.schema as GraphQLSchema
+    return this.schema
   }
 
   // getRoot returns the root node.
